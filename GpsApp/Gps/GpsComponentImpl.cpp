@@ -1,22 +1,12 @@
 // ====================================================================== 
 // \title  GpsImpl.cpp
-// \author mstarch
-// \brief  cpp file for Gps component implementation class
+// \author lestarch
+// \brief  cpp implementation of the F' sample GPS receiver for a
+//         NEMA GPS receiver device.
 //
 // \copyright
-// Copyright 2009-2015, by the California Institute of Technology.
-// ALL RIGHTS RESERVED.  United States Government Sponsorship
-// acknowledged. Any commercial use must be negotiated with the Office
-// of Technology Transfer at the California Institute of Technology.
-// 
-// This software may be subject to U.S. export control laws and
-// regulations.  By accepting this document, the user agrees to comply
-// with all U.S. export laws and regulations.  User has the
-// responsibility to obtain export licenses, or other export authority
-// as may be required before exporting such information to foreign
-// countries or providing access to foreign persons.
+// Copyright 2018, lestarch.
 // ====================================================================== 
-
 
 #include <GpsApp/Gps/GpsComponentImpl.hpp>
 #include "Fw/Types/BasicTypes.hpp"
@@ -112,16 +102,19 @@ namespace GpsApp {
       GpsPacket packet;
       char buffer[1024];
       char* pointer = buffer;
-      //Try to setup, if failure, do no more
+      //During each cycle, attempt to setup if not setup
       setup();
       if (!m_setup) {
           return;
       }
+      //Then receive data from the GPS. Should block until available
+      //and thus, this module should not be driven at a rate faster than 1HZ
       ssize_t size = read(m_fh, buffer, sizeof(buffer));
       if (size <= 0) {
           std::cout << "[ERROR] Failed to read from UART with: " << size << std::endl;
           return;
       }
+      //Look for a recognized GPS location packet and parse it
       for (U32 i = 0; i < sizeof(buffer) - 6; i++) {
           status = sscanf(pointer, "$GPGGA,%f,%f,%c,%f,%c,%u,%u,%f,%f",
               &packet.utcTime, &packet.dmNS, &packet.northSouth,
@@ -133,11 +126,13 @@ namespace GpsApp {
           }
           pointer = pointer + 1;
       }
+      //If we failed to find the packet, or failed to extract data then return
       if (status != 9) {
           std::cout << "[ERROR] GPS parsing failed: " << status << std::endl;
           return;
       }
-      //Latitude ddmm.mmmm
+      //GPS packet locations are of the form: dd.mmmm
+      //We will convert to lat/lon in degrees only before downlinking
       lat = ((packet.northSouth == 'N') ? 1 : -1) *
             ((packet.dmNS - (U32)packet.dmNS)/60.0 + (U32)packet.dmNS);
       lon = ((packet.eastWest == 'E') ? 1 : -1) *
@@ -146,11 +141,11 @@ namespace GpsApp {
       tlmWrite_Gps_Longitude(lon);
       tlmWrite_Gps_Altitude(packet.altitude);
       tlmWrite_Gps_Count(packet.count);
-      //Lock update
-      if (packet.lock == 0) {
+      //Lock status update only if changed
+      if (packet.lock == 0 && m_locked) {
           m_locked = false;
           log_WARNING_HI_Gps_LockLost();
-      } else {
+      } else if (packet.lock == 1 && !m_locked) {
           m_locked = true;
           log_ACTIVITY_HI_Gps_LockAquired();
       }

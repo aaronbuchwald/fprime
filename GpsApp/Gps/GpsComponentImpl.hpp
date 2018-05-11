@@ -1,20 +1,11 @@
 // ====================================================================== 
 // \title  GpsImpl.hpp
-// \author mstarch
-// \brief  hpp file for Gps component implementation class
+// \author lemstarch
+// \brief  hpp header file for the sample F' GPS component, based on a
+//         NEMA GPS receiver.
 //
 // \copyright
-// Copyright 2009-2015, by the California Institute of Technology.
-// ALL RIGHTS RESERVED.  United States Government Sponsorship
-// acknowledged. Any commercial use must be negotiated with the Office
-// of Technology Transfer at the California Institute of Technology.
-// 
-// This software may be subject to U.S. export control laws and
-// regulations.  By accepting this document, the user agrees to comply
-// with all U.S. export laws and regulations.  User has the
-// responsibility to obtain export licenses, or other export authority
-// as may be required before exporting such information to foreign
-// countries or providing access to foreign persons.
+// Copyright 2018, lestarch
 // ====================================================================== 
 
 #ifndef Gps_HPP
@@ -28,7 +19,9 @@ namespace GpsApp {
     public GpsComponentBase
   {
       /**
-       * Gps Packet data.
+       * GpsPacket:
+       *   A structure containing the information in the GPS location pacaket
+       * received via the NEMA GPS receiver.
        */
       struct GpsPacket {
           float utcTime;
@@ -38,7 +31,7 @@ namespace GpsApp {
           char eastWest;
           unsigned int lock;
           unsigned int count;
-          float filler2;
+          float filler;
           float altitude;
       };
     public:
@@ -69,7 +62,8 @@ namespace GpsApp {
       ~GpsComponentImpl(void);
 
     PRIVATE:
-      //! Setup the UART
+      //! Setup the UART interface for taking with the GPS module. Note: this
+      //! is currently implemented using standard Unix /dev/tty* devices.
       //!
       void setup(void);
       // ----------------------------------------------------------------------
@@ -101,8 +95,6 @@ namespace GpsApp {
       bool m_locked;
       //!< File handle of UART
       NATIVE_INT_TYPE m_fh;
-
-
     };
 
 } // end namespace GpsApp
