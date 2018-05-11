@@ -89,12 +89,6 @@ Svc::SocketGndIfImpl sockGndIf
 #endif
 ;
 
-// Driver Component
-Drv::BlockDriverImpl blockDrv
-#if FW_OBJECT_NAMES == 1
-                    ("BDRV")
-#endif
-;
 // GPS Component
 GpsApp::GpsComponentImpl gpsImpl
 #if FW_OBJECT_NAMES == 1
@@ -201,9 +195,6 @@ void constructApp(int port_number, char* hostname) {
     
     rateGroup3Comp.init(10,2);
 
-    // Initialize block driver
-    blockDrv.init(10);
-
     gpsImpl.init(10, 1);
 #if FW_ENABLE_TEXT_LOGGING
     textLogger.init();
@@ -256,8 +247,7 @@ void constructApp(int port_number, char* hostname) {
         {3,5,cmdSeq.getObjName()}, // 5
         {3,5,chanTlm.getObjName()}, // 6
         {3,5,fileUplink.getObjName()}, // 7
-        {3,5,blockDrv.getObjName()}, // 8
-        {3,5,fileDownlink.getObjName()}, // 9
+        {3,5,fileDownlink.getObjName()}, // 8
     };
 
     // register ping table
@@ -268,8 +258,6 @@ void constructApp(int port_number, char* hostname) {
     rateGroup1Comp.start(ACTIVE_COMP_1HZ_RG, 120,10 * 1024);
     rateGroup2Comp.start(ACTIVE_COMP_P5HZ_RG, 119,10 * 1024);
     rateGroup3Comp.start(ACTIVE_COMP_P25HZ_RG, 118,10 * 1024);
-    // start driver
-    blockDrv.start(ACTIVE_COMP_BLKDRV,140,10*1024);
     // start dispatcher
     cmdDisp.start(ACTIVE_COMP_CMD_DISP,101,10*1024);
     // start sequencer
@@ -292,21 +280,16 @@ void constructApp(int port_number, char* hostname) {
 
 }
 
-//void run1cycle(void) {
-//    // get timer to call rate group driver
-//    Svc::TimerVal timer;
-//    timer.take();
-//    rateGroupDriverComp.get_CycleIn_InputPort(0)->invoke(timer);
-//    Os::Task::TaskStatus delayStat = Os::Task::delay(1000);
-//    FW_ASSERT(Os::Task::TASK_OK == delayStat,delayStat);
-//}
-
-
 void run1cycle(void) {
-    // call interrupt to emulate a clock
-    blockDrv.callIsr();
-    Os::Task::delay(1000); //10Hz
+    // get timer to call rate group driver
+    Svc::TimerVal timer;
+    timer.take();
+    rateGroupDriverComp.get_CycleIn_InputPort(0)->invoke(timer);
+    Os::Task::TaskStatus delayStat = Os::Task::delay(1000);
+    FW_ASSERT(Os::Task::TASK_OK == delayStat,delayStat);
 }
+
+
 
 void runcycles(NATIVE_INT_TYPE cycles) {
     if (cycles == -1) {
@@ -325,7 +308,6 @@ void exitTasks(void) {
     rateGroup1Comp.exit();
     rateGroup2Comp.exit();
     rateGroup3Comp.exit();
-    blockDrv.exit();
     cmdDisp.exit();
     eventLogger.exit();
     chanTlm.exit();

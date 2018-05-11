@@ -57,8 +57,6 @@
 
    <instance namespace="Svc" name="rateGroupDriverComp" type="RateGroupDriver" base_id="461"  base_id_window="20" />
 
-   <instance namespace="Drv" name="blockDrv" type="BlockDriver" base_id="481"  base_id_window="20" />
-
    <instance namespace="Svc" name="cmdSeq" type="CmdSequencer" base_id="541"  base_id_window="23" />
 
    <instance namespace="Svc" name="fileDownlink" type="FileDownlink" base_id="501"  base_id_window="20" />
@@ -98,10 +96,6 @@
 	 <source component = "rateGroup1Comp" port = "RateGroupMemberOut" type = "Sched" num = "2"/>
  	 <target component = "gpsImpl" port = "schedIn" type = "Sched" num = "0"/>
 </connection>
-<connection name = "Connection9">
-	 <source component = "blockDrv" port = "PingOut" type = "Ping" num = "0"/>
- 	 <target component = "health" port = "PingReturn" type = "Ping" num = "11"/>
-</connection>
 <connection name = "Connection10">
 	 <source component = "fileDownlink" port = "tlmOut" type = "Tlm" num = "0"/>
  	 <target component = "chanTlm" port = "TlmRecv" type = "Tlm" num = "0"/>
@@ -133,10 +127,6 @@
 <connection name = "Connection17">
 	 <source component = "prmDb" port = "Time" type = "Time" num = "0"/>
  	 <target component = "linuxTime" port = "timeGetPort" type = "Time" num = "0"/>
-</connection>
-<connection name = "Connection18">
-	 <source component = "blockDrv" port = "CycleOut" type = "Cycle" num = "0"/>
- 	 <target component = "rateGroupDriverComp" port = "CycleIn" type = "Cycle" num = "0"/>
 </connection>
 <connection name = "Connection19">
 	 <source component = "fileUplink" port = "tlmOut" type = "Tlm" num = "0"/>
@@ -238,10 +228,6 @@
 	 <source component = "eventLogger" port = "pingOut" type = "Ping" num = "0"/>
  	 <target component = "health" port = "PingReturn" type = "Ping" num = "3"/>
 </connection>
-<connection name = "Connection44">
-	 <source component = "health" port = "PingSend" type = "Ping" num = "11"/>
- 	 <target component = "blockDrv" port = "PingIn" type = "Ping" num = "0"/>
-</connection>
 <connection name = "Connection45">
 	 <source component = "rateGroup2Comp" port = "Log" type = "Log" num = "0"/>
  	 <target component = "eventLogger" port = "LogRecv" type = "Log" num = "0"/>
@@ -281,10 +267,6 @@
 <connection name = "Connection54">
 	 <source component = "rateGroup2Comp" port = "RateGroupMemberOut" type = "Sched" num = "0"/>
  	 <target component = "cmdSeq" port = "schedIn" type = "Sched" num = "0"/>
-</connection>
-<connection name = "Connection55">
-	 <source component = "rateGroup3Comp" port = "RateGroupMemberOut" type = "Sched" num = "2"/>
- 	 <target component = "blockDrv" port = "Sched" type = "Sched" num = "0"/>
 </connection>
 <connection name = "Connection56">
 	 <source component = "fatalAdapter" port = "Log" type = "Log" num = "0"/>
@@ -390,10 +372,6 @@
 	 <source component = "fileDownlink" port = "eventOut" type = "Log" num = "0"/>
  	 <target component = "eventLogger" port = "LogRecv" type = "Log" num = "0"/>
 </connection>
-<connection name = "Connection82">
-	 <source component = "blockDrv" port = "Tlm" type = "Tlm" num = "0"/>
- 	 <target component = "chanTlm" port = "TlmRecv" type = "Tlm" num = "0"/>
-</connection>
 <connection name = "Connection83">
 	 <source component = "eventLogger" port = "FatalAnnounce" type = "FatalEvent" num = "0"/>
  	 <target component = "fatalHandler" port = "FatalReceive" type = "FatalEvent" num = "0"/>
@@ -417,10 +395,6 @@
 <connection name = "Connection88">
 	 <source component = "sockGndIf" port = "fileUplinkBufferSendOut" type = "BufferSend" num = "0"/>
  	 <target component = "fileUplink" port = "bufferSendIn" type = "BufferSend" num = "0"/>
-</connection>
-<connection name = "Connection89">
-	 <source component = "blockDrv" port = "Time" type = "Time" num = "0"/>
- 	 <target component = "linuxTime" port = "timeGetPort" type = "Time" num = "0"/>
 </connection>
 <connection name = "Connection90">
 	 <source component = "rateGroup3Comp" port = "Log" type = "Log" num = "0"/>

@@ -22,7 +22,7 @@
 #include "Fw/Types/BasicTypes.hpp"
 
 //File path to UART device on UNIX system
-#define UART_FILE_PATH "/dev/abc"
+#define UART_FILE_PATH "/dev/ttyACM0"
 #include <cstring>
 #include <iostream>
 //POSIX includes for UART communication
@@ -70,7 +70,8 @@ namespace GpsApp {
   }
 
   void GpsComponentImpl ::
-    setup(void) {
+    setup(void)
+  {
       if (m_setup) {
           return;
       }
@@ -106,19 +107,53 @@ namespace GpsApp {
         NATIVE_UINT_TYPE context
     )
   {
-    U8 buffer[1024];
-    //Try to setup, if failure, do no more
-    setup();
-    if (!m_setup) {
-        return;
-    }
-    ssize_t size = read(m_fh, buffer, sizeof(buffer));
-    if (size <= 0) {
-        std::cout << "[ERROR] Failed to read from UART with: " << size << std::endl;
-        return;
-    }
-    //Parse stuff here
-    std::cout << "Message: <<" << reinterpret_cast<I8*>(buffer) << ">>"<< std::endl;
+      int status = 0;
+      float lat = 0.0f, lon = 0.0f;
+      GpsPacket packet;
+      char buffer[1024];
+      char* pointer = buffer;
+      //Try to setup, if failure, do no more
+      setup();
+      if (!m_setup) {
+          return;
+      }
+      ssize_t size = read(m_fh, buffer, sizeof(buffer));
+      if (size <= 0) {
+          std::cout << "[ERROR] Failed to read from UART with: " << size << std::endl;
+          return;
+      }
+      for (U32 i = 0; i < sizeof(buffer) - 6; i++) {
+          status = sscanf(pointer, "$GPGGA,%f,%f,%c,%f,%c,%u,%u,%f,%f",
+              &packet.utcTime, &packet.dmNS, &packet.northSouth,
+              &packet.dmEW, &packet.eastWest, &packet.lock,
+              &packet.count, &packet.filler2, &packet.altitude);
+          //Break when all GPS items are found
+          if (status == 9) {
+              break;
+          }
+          pointer = pointer + 1;
+      }
+      if (status != 9) {
+          std::cout << "[ERROR] GPS parsing failed: " << status << std::endl;
+          return;
+      }
+      //Latitude ddmm.mmmm
+      lat = ((packet.northSouth == 'N') ? 1 : -1) *
+            ((packet.dmNS - (U32)packet.dmNS)/60.0 + (U32)packet.dmNS);
+      lon = ((packet.eastWest == 'E') ? 1 : -1) *
+            ((packet.dmEW - (U32)packet.dmEW)/60.0 + (U32)packet.dmEW);
+      tlmWrite_Gps_Latitude(lat);
+      tlmWrite_Gps_Longitude(lon);
+      tlmWrite_Gps_Altitude(packet.altitude);
+      tlmWrite_Gps_Count(packet.count);
+      //Lock update
+      if (packet.lock == 0) {
+          m_locked = false;
+          log_WARNING_HI_Gps_LockLost();
+      } else {
+          m_locked = true;
+          log_ACTIVITY_HI_Gps_LockAquired();
+      }
   }
 
   // ----------------------------------------------------------------------
@@ -131,7 +166,11 @@ namespace GpsApp {
         const U32 cmdSeq
     )
   {
-
+    //Locked-force print
+    if (m_locked) {
+        log_ACTIVITY_HI_Gps_LockAquired();
+    } else {
+        log_WARNING_HI_Gps_LockLost();
+    }
   }
-
 } // end namespace GpsApp

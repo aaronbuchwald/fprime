@@ -27,7 +27,20 @@ namespace GpsApp {
   class GpsComponentImpl :
     public GpsComponentBase
   {
-
+      /**
+       * Gps Packet data.
+       */
+      struct GpsPacket {
+          float utcTime;
+          float dmNS;
+          char northSouth;
+          float dmEW;
+          char eastWest;
+          unsigned int lock;
+          unsigned int count;
+          float filler2;
+          float altitude;
+      };
     public:
 
       // ----------------------------------------------------------------------

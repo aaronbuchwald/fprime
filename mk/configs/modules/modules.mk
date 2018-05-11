@@ -69,9 +69,7 @@ SVC_MODULES := \
 	Svc/FileManager
 
 DRV_MODULES := \
-	Drv/DataTypes \
-	Drv/BlockDriver
-	
+	Drv/DataTypes
 
 REF_MODULES := \
 	Ref/Top \

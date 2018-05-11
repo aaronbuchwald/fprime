@@ -24,7 +24,6 @@ void exitTasks(void);
 #include <GpsApp/Top/TargetInit.hpp>
 #include <Svc/AssertFatalAdapter/AssertFatalAdapterComponentImpl.hpp>
 #include <Svc/FatalHandler/FatalHandlerComponentImpl.hpp>
-#include <Drv/BlockDriver/BlockDriverImpl.hpp>
 
 //Our Stuff
 #include <GpsApp/Gps/GpsComponentImpl.hpp>
@@ -46,8 +45,6 @@ extern Svc::BufferManager fileUplinkBufferManager;
 extern Svc::AssertFatalAdapterComponentImpl fatalAdapter;
 extern Svc::FatalHandlerComponentImpl fatalHandler;
 extern Svc::HealthImpl health;
-
-extern Drv::BlockDriverImpl blockDrv;
-
+//Our new GPS Driver
 extern GpsApp::GpsComponentImpl gpsImpl;
 #endif
