@@ -25,7 +25,9 @@ void exitTasks(void);
 #include <Svc/AssertFatalAdapter/AssertFatalAdapterComponentImpl.hpp>
 #include <Svc/FatalHandler/FatalHandlerComponentImpl.hpp>
 
-//Our Stuff
+//Gps Inclusion:
+// Here we include the header definition of our GPS component, not the GPS is declared
+// further down in the file.
 #include <GpsApp/Gps/GpsComponentImpl.hpp>
 
 extern Svc::RateGroupDriverImpl rateGroupDriverComp;

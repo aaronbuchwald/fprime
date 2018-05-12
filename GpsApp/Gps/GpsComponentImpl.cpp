@@ -2,7 +2,7 @@
 // \title  GpsImpl.cpp
 // \author lestarch
 // \brief  cpp implementation of the F' sample GPS receiver for a
-//         NEMA GPS receiver device.
+//         NMEA GPS receiver device.
 //
 // \copyright
 // Copyright 2018, lestarch.
@@ -59,6 +59,10 @@ namespace GpsApp {
 
   }
 
+  //Step 1: setup
+  //
+  // Each second, we should ensure that the UART is initialized
+  // and if not, we should try to initialize it again.
   void GpsComponentImpl ::
     setup(void)
   {
@@ -91,6 +95,10 @@ namespace GpsApp {
   // Handler implementations for user-defined typed input ports
   // ----------------------------------------------------------------------
 
+  // Step 0: schedIn
+  //
+  //  By implementing this "handler" we can respond to the 1HZ call allowing
+  //  us to read the GPS UART every 1 second.
   void GpsComponentImpl ::
     schedIn_handler(
         const NATIVE_INT_TYPE portNum,
@@ -103,23 +111,30 @@ namespace GpsApp {
       char buffer[1024];
       char* pointer = buffer;
       //During each cycle, attempt to setup if not setup
+      //Step 1: setup
+      // Each second, we should ensure that the UART is initialized
+      // and if not, we should try to initialize it again.
       setup();
       if (!m_setup) {
           return;
       }
       //Then receive data from the GPS. Should block until available
       //and thus, this module should not be driven at a rate faster than 1HZ
+      //Step 2: read the UART
+      // Read the GPS message from the UART
       ssize_t size = read(m_fh, buffer, sizeof(buffer));
       if (size <= 0) {
           std::cout << "[ERROR] Failed to read from UART with: " << size << std::endl;
           return;
       }
       //Look for a recognized GPS location packet and parse it
+      //Step 3:
+      // Parse the GPS message from the UART (looking for $GPPA messages)
       for (U32 i = 0; i < sizeof(buffer) - 6; i++) {
           status = sscanf(pointer, "$GPGGA,%f,%f,%c,%f,%c,%u,%u,%f,%f",
               &packet.utcTime, &packet.dmNS, &packet.northSouth,
               &packet.dmEW, &packet.eastWest, &packet.lock,
-              &packet.count, &packet.filler2, &packet.altitude);
+              &packet.count, &packet.filler, &packet.altitude);
           //Break when all GPS items are found
           if (status == 9) {
               break;
@@ -131,17 +146,26 @@ namespace GpsApp {
           std::cout << "[ERROR] GPS parsing failed: " << status << std::endl;
           return;
       }
-      //GPS packet locations are of the form: dd.mmmm
+      //GPS packet locations are of the form: ddmm.mmmm
       //We will convert to lat/lon in degrees only before downlinking
-      lat = ((packet.northSouth == 'N') ? 1 : -1) *
-            ((packet.dmNS - (U32)packet.dmNS)/60.0 + (U32)packet.dmNS);
-      lon = ((packet.eastWest == 'E') ? 1 : -1) *
-            ((packet.dmEW - (U32)packet.dmEW)/60.0 + (U32)packet.dmEW);
+      //Latitude degrees, add on minutes (converted to degrees), multiply by direction
+      lat = (U32)(packet.dmNS/100.0f);
+      lat = lat + (packet.dmNS - (lat * 100.0f))/60.0f;
+      lat = lat * ((packet.northSouth == 'N') ? 1 : -1);
+      //Longitude degrees, add on minutes (converted to degrees), multiply by direction
+      lon = (U32)(packet.dmEW/100.0f);
+      lon = lon + (packet.dmEW - (lon * 100.0f))/60.f;
+      lon = lon * ((packet.eastWest == 'E') ? 1 : -1);
+      //Step 4: downlink
+      // Call the downlink functions to send down data
+      std::cout << "[INFO] Current lat, lon: (" << lat << "," << lon << ")" << std::endl;
       tlmWrite_Gps_Latitude(lat);
       tlmWrite_Gps_Longitude(lon);
       tlmWrite_Gps_Altitude(packet.altitude);
       tlmWrite_Gps_Count(packet.count);
       //Lock status update only if changed
+      //Step 7,8: note changed lock status
+      // Emit an event if the lock has been aquired, or lost
       if (packet.lock == 0 && m_locked) {
           m_locked = false;
           log_WARNING_HI_Gps_LockLost();
@@ -154,7 +178,10 @@ namespace GpsApp {
   // ----------------------------------------------------------------------
   // Command handler implementations 
   // ----------------------------------------------------------------------
-
+  //Step 9: respond to status command
+  //
+  // When a status command is received, respond by emitting the 
+  // current lock status as an Event.
   void GpsComponentImpl ::
     Gps_ReportLockStatus_cmdHandler(
         const FwOpcodeType opCode,

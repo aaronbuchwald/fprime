@@ -14,6 +14,8 @@
 #endif
 // List of context IDs
 
+// GPS Application:
+//  For GPS application specific items, look for GPS-- comments below
 enum {
     DOWNLINK_PACKET_SIZE = 500,
     DOWNLINK_BUFFER_STORE_SIZE = 2500,
@@ -36,6 +38,8 @@ enum {
 
         ACTIVE_COMP_BLKDRV,
         ACTIVE_COMP_PING_RECEIVER,
+        // GPS-- our component is an active component, thus it needs a thread-id. Thread IDs come from this
+        // enumeration to keep them unique.
         ACTIVE_COMP_GPS,
 
         CYCLER_TASK,
@@ -89,7 +93,7 @@ Svc::SocketGndIfImpl sockGndIf
 #endif
 ;
 
-// GPS Component
+//GPS-- GPS Component construction, notice if compiled with names, a name should be given.
 GpsApp::GpsComponentImpl gpsImpl
 #if FW_OBJECT_NAMES == 1
                     ("GPS")
@@ -194,7 +198,9 @@ void constructApp(int port_number, char* hostname) {
     rateGroup2Comp.init(10,1);
     
     rateGroup3Comp.init(10,2);
-
+    //GPS-- Here we initialize the component with a queue size, and instance number. The queue size governs how
+    //      many waiting port calls can queue up before the system asserts, and the instance number is a unique
+    //      number given to every instance of a given type.
     gpsImpl.init(10, 1);
 #if FW_ENABLE_TEXT_LOGGING
     textLogger.init();
@@ -266,6 +272,9 @@ void constructApp(int port_number, char* hostname) {
     eventLogger.start(ACTIVE_COMP_LOGGER,98,10*1024);
     chanTlm.start(ACTIVE_COMP_TLM,97,10*1024);
     prmDb.start(ACTIVE_COMP_PRMDB,96,10*1024);
+    //GPS-- GPS thread starting. The GPS component is active, so its governing thread must be started
+    //      with the unique id, defined above, a priority 256 (highest) - 0 (lowest) set here to 99, and
+    //      a stack size for the thread, here 10KB is used.
     gpsImpl.start(ACTIVE_COMP_GPS, 99, 10*1024);
 
     fileDownlink.start(ACTIVE_COMP_FILE_DOWNLINK, 100, 10*1024);
@@ -274,12 +283,10 @@ void constructApp(int port_number, char* hostname) {
     // Initialize socket server
     sockGndIf.startSocketTask(100, port_number, hostname);
 
-#if FW_OBJECT_REGISTRATION == 1
-    //simpleReg.dump();
-#endif
-
 }
-
+//GPS-- Given the application's lack of a specific timing element, we
+//      force a call to the rate group driver every second here.
+//      More complex applications may drive this from a system oscillator.
 void run1cycle(void) {
     // get timer to call rate group driver
     Svc::TimerVal timer;

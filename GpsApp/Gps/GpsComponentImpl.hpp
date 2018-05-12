@@ -2,7 +2,7 @@
 // \title  GpsImpl.hpp
 // \author lemstarch
 // \brief  hpp header file for the sample F' GPS component, based on a
-//         NEMA GPS receiver.
+//         NMEA GPS receiver.
 //
 // \copyright
 // Copyright 2018, lestarch
@@ -21,7 +21,7 @@ namespace GpsApp {
       /**
        * GpsPacket:
        *   A structure containing the information in the GPS location pacaket
-       * received via the NEMA GPS receiver.
+       * received via the NMEA GPS receiver.
        */
       struct GpsPacket {
           float utcTime;

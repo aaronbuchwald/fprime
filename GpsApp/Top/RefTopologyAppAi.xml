@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-model href="../../Autocoders/schema/ISF/topology_schema.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<!--
+Topology Ai:
+
+The topology Ai.xml file consists of three parts:
+
+1. Importation of individual modules and components
+2. Declaration of used components
+3. Port connections between components
+
+Note: in most cases this file is auto-generated using magic draw.
+-->
 <assembly name = "Ref">
+	<!-- 
+        Component XML includes:
+
+        Here the various components used in our Topology are included via their *Ai.xml file.  This links
+        those design files with this top-level make file.
+        -->
 	<import_component_type>Svc/ActiveRateGroup/ActiveRateGroupComponentAi.xml</import_component_type>
 	<import_component_type>Svc/FileUplink/FileUplinkComponentAi.xml</import_component_type>
 	<import_component_type>Svc/BufferManager/BufferManagerComponentAi.xml</import_component_type>
@@ -22,7 +39,14 @@
 	<import_component_type>Svc/CmdSequencer/CmdSequencerComponentAi.xml</import_component_type>
 	<import_component_type>Svc/FileDownlink/FileDownlinkComponentAi.xml</import_component_type>
 	<import_component_type>Svc/PassiveTextLogger/PassiveTextLoggerComponentAi.xml</import_component_type>
+   <!--
+   Instance declarations:
 
+   Define the components that make up the topology, this includes the namespace of the compnent, and the type of the component.
+   These values should match the component Ai XML that was imported.
+
+   In addition, the component should have a name, which will be used in the Components.hpp, and Topology.cpp files. 
+   -->
    <instance namespace="Svc" name="rateGroup3Comp" type="ActiveRateGroup" base_id="241"  base_id_window="20" />
 
    <instance namespace="Svc" name="fileUplink" type="FileUplink" base_id="261"  base_id_window="20" />
@@ -63,7 +87,14 @@
 
    <instance namespace="Svc" name="textLogger" type="PassiveTextLogger" base_id="521"  base_id_window="20" />
 
+<!--
+Connection definitions:
 
+This section defines the connections between components. The source component, and source component port name
+should be declared, and matched to the target component, and port. The type of the port is also specified.
+Finally, the port number on the source and target is defined, in the case that the named port has a multiplicity
+meaning that it is an array of ports under the same name.
+-->
 <connection name = "Connection1">
 	 <source component = "rateGroupDriverComp" port = "CycleOut" type = "Cycle" num = "1"/>
  	 <target component = "rateGroup2Comp" port = "CycleIn" type = "Cycle" num = "0"/>
