@@ -226,7 +226,7 @@ void constructApp(int port_number, char* hostname) {
     fatalHandler.init(0);
     health.init(25,0);
     // Connect rate groups to rate group driver
-    constructRefArchitecture();
+    constructGpsAppArchitecture();
 
     /* Register commands */
     cmdSeq.regCommands();

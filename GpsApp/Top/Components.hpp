@@ -1,6 +1,6 @@
 #ifndef __LITS_COMPONENTS_HEADER__
 #define __LITS_COMPONENTS_HEADER__
-void constructRefArchitecture(void);
+void constructGpsAppArchitecture(void);
 void exitTasks(void);
 
 #include <Svc/ActiveRateGroup/ActiveRateGroupImpl.hpp>
@@ -21,7 +21,6 @@ void exitTasks(void);
 
 #include <Svc/SocketGndIf/SvcSocketGndIfImpl.hpp>
 
-#include <GpsApp/Top/TargetInit.hpp>
 #include <Svc/AssertFatalAdapter/AssertFatalAdapterComponentImpl.hpp>
 #include <Svc/FatalHandler/FatalHandlerComponentImpl.hpp>
 

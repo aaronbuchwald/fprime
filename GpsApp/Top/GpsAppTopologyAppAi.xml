@@ -11,7 +11,7 @@ The topology Ai.xml file consists of three parts:
 
 Note: in most cases this file is auto-generated using magic draw.
 -->
-<assembly name = "Ref">
+<assembly name = "GpsApp">
 	<!-- 
         Component XML includes:
 
