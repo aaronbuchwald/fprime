@@ -30,6 +30,7 @@ void exitTasks(void);
 // further down in the file.
 #include <GpsApp/Gps/GpsComponentImpl.hpp>
 
+void constructApp(int port_number, char* hostname);
 extern Svc::RateGroupDriverImpl rateGroupDriverComp;
 extern Svc::ActiveRateGroupImpl rateGroup1Comp, rateGroup2Comp, rateGroup3Comp;
 extern Svc::CmdSequencerComponentImpl cmdSeq;

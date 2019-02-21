@@ -2,7 +2,6 @@
 
 
 #include <Fw/Types/Assert.hpp>
-#include <Ref/Top/TargetInit.hpp>
 #include <Os/Task.hpp>
 #include <Os/Log.hpp>
 #include <Fw/Types/MallocAllocator.hpp>
@@ -183,8 +182,6 @@ void dumpobj(const char* objName) {
 
 void constructApp(int port_number, char* hostname) {
 
-    localTargetInit();
-
 #if FW_PORT_TRACING
     Fw::PortBase::setTrace(false);
 #endif    
@@ -324,71 +321,3 @@ void exitTasks(void) {
     cmdSeq.exit();
 }
 
-void print_usage() {
-	(void) printf("Usage: ./Ref [options]\n-p\tport_number\n-a\thostname/IP address\n");
-}
-
-
-#include <signal.h>
-#include <stdio.h>
-
-volatile sig_atomic_t terminate = 0;
-
-static void sighandler(int signum) {
-	terminate = 1;
-}
-
-int main(int argc, char* argv[]) {
-	U32 port_number;
-	I32 option;
-	char *hostname;
-	port_number = 0;
-	option = 0;
-	hostname = NULL;
-
-	while ((option = getopt(argc, argv, "hp:a:")) != -1){
-		switch(option) {
-			case 'h':
-				print_usage();
-				return 0;
-				break;
-			case 'p':
-				port_number = atoi(optarg);
-				break;
-			case 'a':
-				hostname = optarg;
-				break;
-			case '?':
-				return 1;
-			default:
-				print_usage();
-				return 1;
-		}
-	}
-
-	(void) printf("Hit Ctrl-C to quit\n");
-
-    constructApp(port_number, hostname);
-    //dumparch();
-
-    signal(SIGINT,sighandler);
-    signal(SIGTERM,sighandler);
-
-    int cycle = 0;
-
-    while (!terminate) {
-//        (void) printf("Cycle %d\n",cycle);
-        runcycles(1);
-        cycle++;
-    }
-
-    // stop tasks
-    exitTasks();
-    // Give time for threads to exit
-    (void) printf("Waiting for threads...\n");
-    Os::Task::delay(1000);
-
-    (void) printf("Exiting...\n");
-
-    return 0;
-}
