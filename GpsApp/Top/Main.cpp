@@ -57,7 +57,16 @@ int main(int argc, char* argv[]) {
     // Give time for threads to exit
     (void) printf("Waiting for threads...\n");
     Os::Task::delay(1000);
-    while(1) {}
+    while(1) {
+        //GPS-- Given the application's lack of a specific timing element, we
+        //      force a call to the rate group driver every second here.
+        //      More complex applications may drive this from a system oscillator.
+        Svc::TimerVal timer;
+        timer.take();
+        rateGroupDriverComp.get_CycleIn_InputPort(0)->invoke(timer);
+        Os::Task::TaskStatus delayStat = Os::Task::delay(1000);
+        FW_ASSERT(Os::Task::TASK_OK == delayStat,delayStat);
+    }
     (void) printf("Exiting...\n");
 
     return 0;
