@@ -9,11 +9,11 @@
     <import_port_type>Svc/Sched/SchedPortAi.xml</import_port_type>
     <import_port_type>Fw/Tlm/TlmPortAi.xml</import_port_type>
     <import_port_type>Fw/Cmd/CmdResponsePortAi.xml</import_port_type>
+    <import_port_type>Drv/SerialDriverPorts/SerialReadPortAi.xml</import_port_type>
     <import_dictionary>GpsApp/Gps/Commands.xml</import_dictionary>
     <import_dictionary>GpsApp/Gps/Telemetry.xml</import_dictionary>
     <import_dictionary>GpsApp/Gps/Events.xml</import_dictionary>
     <ports>
-    
 
         <port name="cmdRegOut" data_type="Fw::CmdReg"  kind="output" role="CmdRegistration"    max_number="1">
         </port>
@@ -32,6 +32,9 @@
 
         <port name="cmdResponseOut" data_type="Fw::CmdResponse"  kind="output" role="CmdResponse"    max_number="1">
         </port>
+
+        <port name="serialRecv" data_type="Drv::SerialRead"  kind="input"   max_number="1">
+        </port>   
     </ports>
 
 </component>
