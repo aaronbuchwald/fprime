@@ -19,21 +19,24 @@ void exitTasks(void);
 #include <Svc/BufferManager/BufferManager.hpp>
 #include <Svc/Health/HealthComponentImpl.hpp>
 
-#include <Svc/SocketGndIf/SvcSocketGndIfImpl.hpp>
+#include <Drv/SocketIpDriver/SocketIpDriverComponentImpl.hpp>
+#include <Svc/GroundInterface/GroundInterface.hpp>
 
 #include <Svc/AssertFatalAdapter/AssertFatalAdapterComponentImpl.hpp>
 #include <Svc/FatalHandler/FatalHandlerComponentImpl.hpp>
+
+#include <Drv/LinuxSerialDriver/LinuxSerialDriverComponentImpl.hpp>
 
 //Gps Inclusion:
 // Here we include the header definition of our GPS component, not the GPS is declared
 // further down in the file.
 #include <GpsApp/Gps/GpsComponentImpl.hpp>
 
-void constructApp(int port_number, char* hostname);
+void constructApp(int port_number, char* hostname, char* device);
 extern Svc::RateGroupDriverImpl rateGroupDriverComp;
 extern Svc::ActiveRateGroupImpl rateGroup1Comp, rateGroup2Comp, rateGroup3Comp;
 extern Svc::CmdSequencerComponentImpl cmdSeq;
-extern Svc::SocketGndIfImpl sockGndIf;
+extern Svc::GroundInterfaceComponentImpl groundIf;
 extern Svc::ConsoleTextLoggerImpl textLogger;
 extern Svc::ActiveLoggerImpl eventLogger;
 extern Svc::LinuxTimeImpl linuxTime;
@@ -47,6 +50,8 @@ extern Svc::BufferManager fileUplinkBufferManager;
 extern Svc::AssertFatalAdapterComponentImpl fatalAdapter;
 extern Svc::FatalHandlerComponentImpl fatalHandler;
 extern Svc::HealthImpl health;
+extern Drv::SocketIpDriverComponentImpl socketIpDriver;
 //Our new GPS Driver
 extern GpsApp::GpsComponentImpl gpsImpl;
+extern Drv::LinuxSerialDriverComponentImpl gpsSerial;
 #endif

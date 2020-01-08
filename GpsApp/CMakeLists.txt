@@ -55,4 +55,4 @@ include("${CMAKE_CURRENT_LIST_DIR}/../cmake/FPrime-Code.cmake")
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Gps/")
 
 # Add Topology subdirectory
-#add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Top/")
+add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Top/")

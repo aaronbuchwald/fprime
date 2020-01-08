@@ -10,6 +10,7 @@
     <import_port_type>Fw/Tlm/TlmPortAi.xml</import_port_type>
     <import_port_type>Fw/Cmd/CmdResponsePortAi.xml</import_port_type>
     <import_port_type>Drv/SerialDriverPorts/SerialReadPortAi.xml</import_port_type>
+    <import_port_type>Fw/Buffer/BufferSendPortAi.xml</import_port_type>
     <import_dictionary>GpsApp/Gps/Commands.xml</import_dictionary>
     <import_dictionary>GpsApp/Gps/Telemetry.xml</import_dictionary>
     <import_dictionary>GpsApp/Gps/Events.xml</import_dictionary>
@@ -24,7 +25,10 @@
         <port name="cmdIn" data_type="Fw::Cmd"  kind="input" role="Cmd"    max_number="1">
         </port>
 
-        <port name="schedIn" data_type="Svc::Sched"  kind="async_input"    max_number="1">
+        <port name="serialRecv" data_type="Drv::SerialRead"  kind="async_input"    max_number="1">
+        </port>
+
+        <port name="serialBufferOut" data_type="Fw::BufferSend"  kind="output"  max_number="1">
         </port>
 
         <port name="tlmOut" data_type="Fw::Tlm"  kind="output" role="Telemetry"    max_number="1">
@@ -32,9 +36,6 @@
 
         <port name="cmdResponseOut" data_type="Fw::CmdResponse"  kind="output" role="CmdResponse"    max_number="1">
         </port>
-
-        <port name="serialRecv" data_type="Drv::SerialRead"  kind="input"   max_number="1">
-        </port>   
     </ports>
 
 </component>

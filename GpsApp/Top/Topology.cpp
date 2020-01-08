@@ -7,10 +7,13 @@
 #include <Fw/Types/MallocAllocator.hpp>
 
 #if defined TGT_OS_TYPE_LINUX || TGT_OS_TYPE_DARWIN
-#include <getopt.h>
 #include <stdlib.h>
 #include <ctype.h>
 #endif
+
+
+Os::Log osLogger;
+
 // List of context IDs
 
 // GPS Application:
@@ -86,9 +89,9 @@ Svc::ActiveRateGroupImpl rateGroup3Comp
 ;
 
 // Command Components
-Svc::SocketGndIfImpl sockGndIf
+Svc::GroundInterfaceComponentImpl groundIf
 #if FW_OBJECT_NAMES == 1
-                    ("SGIF")
+                    ("GNDIF")
 #endif
 ;
 
@@ -98,6 +101,14 @@ GpsApp::GpsComponentImpl gpsImpl
                     ("GPS")
 #endif
 ;
+
+Drv::LinuxSerialDriverComponentImpl gpsSerial
+#if FW_OBJECT_NAMES == 1
+                    ("GPSSERIAL")
+#endif
+;
+
+
 
 #if FW_ENABLE_TEXT_LOGGING
 Svc::ConsoleTextLoggerImpl textLogger
@@ -153,6 +164,8 @@ Svc::BufferManager fileDownlinkBufferManager("fileDownlinkBufferManager", DOWNLI
 Svc::BufferManager fileUplinkBufferManager("fileUplinkBufferManager", UPLINK_BUFFER_STORE_SIZE, UPLINK_BUFFER_QUEUE_SIZE);
 Svc::HealthImpl health("health");
 
+Drv::SocketIpDriverComponentImpl socketIpDriver("SocketIpDriver");
+
 Svc::AssertFatalAdapterComponentImpl fatalAdapter
 #if FW_OBJECT_NAMES == 1
 ("fatalAdapter")
@@ -180,8 +193,8 @@ void dumpobj(const char* objName) {
 
 #endif
 
-void constructApp(int port_number, char* hostname) {
-
+void constructApp(int port_number, char* hostname, char* device) {
+    bool uart_connected = false;
 #if FW_PORT_TRACING
     Fw::PortBase::setTrace(false);
 #endif    
@@ -198,6 +211,7 @@ void constructApp(int port_number, char* hostname) {
     //GPS-- Here we initialize the component with a queue size, and instance number. The queue size governs how
     //      many waiting port calls can queue up before the system asserts, and the instance number is a unique
     //      number given to every instance of a given type.
+    gpsSerial.init(1);
     gpsImpl.init(10, 1);
 #if FW_ENABLE_TEXT_LOGGING
     textLogger.init();
@@ -216,7 +230,8 @@ void constructApp(int port_number, char* hostname) {
 
     prmDb.init(10,0);
 
-    sockGndIf.init(0);
+    groundIf.init(0);
+    socketIpDriver.init(0);
 
     fileUplink.init(30, 0);
     fileDownlink.init(30, 0);
@@ -235,6 +250,7 @@ void constructApp(int port_number, char* hostname) {
     prmDb.regCommands();
     fileDownlink.regCommands();
     health.regCommands();
+    gpsImpl.regCommands();
 
     // read parameters
     prmDb.readParamFile();
@@ -252,7 +268,17 @@ void constructApp(int port_number, char* hostname) {
         {3,5,fileUplink.getObjName()}, // 7
         {3,5,fileDownlink.getObjName()}, // 8
     };
-
+    if (!gpsSerial.open(device,
+                   Drv::LinuxSerialDriverComponentImpl::BAUD_9600,
+                   Drv::LinuxSerialDriverComponentImpl::NO_FLOW, 
+                   Drv::LinuxSerialDriverComponentImpl::PARITY_NONE,
+                   true))
+    {
+        Fw::Logger::logMsg("[ERROR] Failed to open GPS UART\n");
+    } else {
+        Fw::Logger::logMsg("[INFO] Opened GPS UART\n");
+        uart_connected = true;
+    }
     // register ping table
     health.setPingEntries(pingEntries,FW_NUM_ARRAY_ELEMENTS(pingEntries),0x123);
 
@@ -273,13 +299,16 @@ void constructApp(int port_number, char* hostname) {
     //      with the unique id, defined above, a priority 256 (highest) - 0 (lowest) set here to 99, and
     //      a stack size for the thread, here 10KB is used.
     gpsImpl.start(ACTIVE_COMP_GPS, 99, 10*1024);
-
+    if (uart_connected) {
+        gpsSerial.startReadThread(100, 20 * 1024);
+    }
     fileDownlink.start(ACTIVE_COMP_FILE_DOWNLINK, 100, 10*1024);
     fileUplink.start(ACTIVE_COMP_FILE_UPLINK, 100, 10*1024);
 
-    // Initialize socket server
-    sockGndIf.startSocketTask(100, port_number, hostname);
-
+    // Initialize socket server if and only if there is a valid specification
+    if (hostname != NULL && port_number != 0) {
+        socketIpDriver.startSocketTask(100, 10 * 1024, hostname, port_number);
+    }
 }
 //GPS-- Given the application's lack of a specific timing element, we
 //      force a call to the rate group driver every second here.

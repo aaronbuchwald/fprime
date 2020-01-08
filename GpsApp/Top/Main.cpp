@@ -5,7 +5,7 @@
 #include <GpsApp/Top/Components.hpp>
 
 void print_usage() {
-    (void) printf("Usage: ./GpsApp [options]\n-p\tport_number\n-a\thostname/IP address\n");
+    (void) printf("Usage: ./GpsApp -a <ground host IP address/hostname> [-p <ground port>] [-d <GPS uart device>]\n");
 }
 
 #include <signal.h>
@@ -19,14 +19,12 @@ static void sighandler(int signum) {
 }
 
 int main(int argc, char* argv[]) {
-    U32 port_number;
-    I32 option;
-    char *hostname;
-    port_number = 0;
-    option = 0;
-    hostname = NULL;
+    I32 option = 0;
+    U32 port_number = 50000;
+    char* hostname = NULL;
+    char* device = (char*)"/dev/ttyUSB0";
 
-    while ((option = getopt(argc, argv, "hp:a:")) != -1){
+    while ((option = getopt(argc, argv, "hp:a:d:")) != -1){
         switch(option) {
             case 'h':
                 print_usage();
@@ -38,6 +36,9 @@ int main(int argc, char* argv[]) {
             case 'a':
                 hostname = optarg;
                 break;
+            case 'd':
+                device = optarg;
+                break;
             case '?':
                 return 1;
             default:
@@ -48,16 +49,13 @@ int main(int argc, char* argv[]) {
 
     (void) printf("Hit Ctrl-C to quit\n");
 
-    constructApp(port_number, hostname);
+    constructApp(port_number, hostname, device);
 
     // register signal handlers to exit program
     signal(SIGINT,sighandler);
     signal(SIGTERM,sighandler);
 
-    // Give time for threads to exit
-    (void) printf("Waiting for threads...\n");
-    Os::Task::delay(1000);
-    while(1) {
+    while(!terminate) {
         //GPS-- Given the application's lack of a specific timing element, we
         //      force a call to the rate group driver every second here.
         //      More complex applications may drive this from a system oscillator.
@@ -67,6 +65,9 @@ int main(int argc, char* argv[]) {
         Os::Task::TaskStatus delayStat = Os::Task::delay(1000);
         FW_ASSERT(Os::Task::TASK_OK == delayStat,delayStat);
     }
+    // Give time for threads to exit
+    (void) printf("Waiting for threads...\n");
+    Os::Task::delay(1000);
     (void) printf("Exiting...\n");
 
     return 0;

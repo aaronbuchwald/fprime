@@ -10,17 +10,10 @@
 
 #include <GpsApp/Gps/GpsComponentImpl.hpp>
 #include "Fw/Types/BasicTypes.hpp"
+#include "Fw/Logger/Logger.hpp"
 
 //File path to UART device on UNIX system
-#define UART_FILE_PATH "/dev/ttyACM0"
 #include <cstring>
-#include <iostream>
-//POSIX includes for UART communication
-extern "C" {
-    #include <unistd.h>
-    #include <fcntl.h>
-    #include <termios.h>
-}
 
 namespace GpsApp {
 
@@ -37,9 +30,7 @@ namespace GpsApp {
 #else
       GpsComponentBase(void),
 #endif
-      m_setup(false),
-      m_locked(false),
-      m_fh(-1)
+      m_locked(false)
   {
 
   }
@@ -53,84 +44,57 @@ namespace GpsApp {
     GpsComponentBase::init(queueDepth, instance);
   }
 
+  void GpsComponentImpl :: preamble(void)
+  {
+      // send buffers to UART driver
+      for (NATIVE_INT_TYPE buffer = 0; buffer < NUM_UART_BUFFERS; buffer++) {
+          // assign buffers to buffer containers
+          this->m_recvBuffers[buffer].setdata((U64)this->m_uartBuffers[buffer]);
+          this->m_recvBuffers[buffer].setsize(UART_READ_BUFF_SIZE);
+          this->serialBufferOut_out(0, this->m_recvBuffers[buffer]);
+      }
+  }
+
   GpsComponentImpl ::
     ~GpsComponentImpl(void)
   {
 
   }
 
-  //Step 1: setup
-  //
-  // Each second, we should ensure that the UART is initialized
-  // and if not, we should try to initialize it again.
-  void GpsComponentImpl ::
-    setup(void)
-  {
-      if (m_setup) {
-          return;
-      }
-      //Open the GPS, and configure it for a raw-socket in read-only mode
-      m_fh = open(UART_FILE_PATH, O_RDONLY);
-      if (m_fh < 0) {
-          std::cout << "[ERROR] Failed to open file: " << UART_FILE_PATH << std::endl;
-          return;
-      }
-      //Setup the struct for termios configuration
-      struct termios options;
-      std::memset(&options, 0, sizeof(options));
-      //Set to raw socket, remove modem control, allow input
-      cfmakeraw(&options);
-      options.c_cflag |= (CLOCAL | CREAD);
-      //Set to 9600 baud
-      cfsetispeed(&options, B9600);
-      //Make the above options stick
-      NATIVE_INT_TYPE status = tcsetattr(m_fh, TCSANOW, &options);
-      if (status != 0) {
-          std::cout << "[ERROR] Failed to setup UART options" << std::endl;
-          return;
-      }
-      m_setup = true;
-  }
   // ----------------------------------------------------------------------
   // Handler implementations for user-defined typed input ports
   // ----------------------------------------------------------------------
 
-  // Step 0: schedIn
+  // Step 0: serialIn
   //
   //  By implementing this "handler" we can respond to the 1HZ call allowing
   //  us to read the GPS UART every 1 second.
   void GpsComponentImpl ::
-    schedIn_handler(
-        const NATIVE_INT_TYPE portNum,
-        NATIVE_UINT_TYPE context
+    serialRecv_handler(
+        const NATIVE_INT_TYPE portNum, /*!< The port number*/
+        Fw::Buffer &serBuffer, /*!< Buffer containing data*/
+        Drv::SerialReadStatus &serial_status /*!< Status of read*/
     )
   {
       int status = 0;
       float lat = 0.0f, lon = 0.0f;
       GpsPacket packet;
-      char buffer[1024];
-      char* pointer = buffer;
-      //During each cycle, attempt to setup if not setup
-      //Step 1: setup
-      // Each second, we should ensure that the UART is initialized
-      // and if not, we should try to initialize it again.
-      setup();
-      if (!m_setup) {
+      U32 buffsize = static_cast<U32>(serBuffer.getsize());
+      char* pointer = reinterpret_cast<char*>(serBuffer.getdata());
+      if (serial_status != Drv::SER_OK) {
+          Fw::Logger::logMsg("[WARNING] Received buffer with bad packet: %d\n", serial_status);
+          serBuffer.setsize(UART_READ_BUFF_SIZE);
+          this->serialBufferOut_out(0, serBuffer);
           return;
-      }
-      //Then receive data from the GPS. Should block until available
-      //and thus, this module should not be driven at a rate faster than 1HZ
-      //Step 2: read the UART
-      // Read the GPS message from the UART
-      ssize_t size = read(m_fh, buffer, sizeof(buffer));
-      if (size <= 0) {
-          std::cout << "[ERROR] Failed to read from UART with: " << size << std::endl;
+      } else if (buffsize < 24) {
+          serBuffer.setsize(UART_READ_BUFF_SIZE);
+          this->serialBufferOut_out(0, serBuffer);
           return;
       }
       //Look for a recognized GPS location packet and parse it
       //Step 3:
       // Parse the GPS message from the UART (looking for $GPPA messages)
-      for (U32 i = 0; i < sizeof(buffer) - 6; i++) {
+      for (U32 i = 0; i < (buffsize - 24); i++) {
           status = sscanf(pointer, "$GPGGA,%f,%f,%c,%f,%c,%u,%u,%f,%f",
               &packet.utcTime, &packet.dmNS, &packet.northSouth,
               &packet.dmEW, &packet.eastWest, &packet.lock,
@@ -141,9 +105,15 @@ namespace GpsApp {
           }
           pointer = pointer + 1;
       }
-      //If we failed to find the packet, or failed to extract data then return
-      if (status != 9) {
-          std::cout << "[ERROR] GPS parsing failed: " << status << std::endl;
+      //If we failed to find the GPGGA then exit. If failed to extract data then return
+      if (status == 0) {
+          serBuffer.setsize(UART_READ_BUFF_SIZE);
+          this->serialBufferOut_out(0, serBuffer);
+          return;
+      } else if (status != 9) {
+          Fw::Logger::logMsg("[ERROR] GPS parsing failed: %d\n", status);
+          serBuffer.setsize(UART_READ_BUFF_SIZE);
+          this->serialBufferOut_out(0, serBuffer);
           return;
       }
       //GPS packet locations are of the form: ddmm.mmmm
@@ -158,7 +128,7 @@ namespace GpsApp {
       lon = lon * ((packet.eastWest == 'E') ? 1 : -1);
       //Step 4: downlink
       // Call the downlink functions to send down data
-      std::cout << "[INFO] Current lat, lon: (" << lat << "," << lon << ")" << std::endl;
+      Fw::Logger::logMsg("[INFO] Current lat, lon: (%f,%f)\n", (double)lat, (double)lon);
       tlmWrite_Gps_Latitude(lat);
       tlmWrite_Gps_Longitude(lon);
       tlmWrite_Gps_Altitude(packet.altitude);
@@ -173,6 +143,8 @@ namespace GpsApp {
           m_locked = true;
           log_ACTIVITY_HI_Gps_LockAquired();
       }
+      serBuffer.setsize(UART_READ_BUFF_SIZE);
+      this->serialBufferOut_out(0, serBuffer);
   }
 
   // ----------------------------------------------------------------------

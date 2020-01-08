@@ -13,6 +13,9 @@
 
 #include "GpsApp/Gps/GpsComponentAc.hpp"
 
+#define NUM_UART_BUFFERS 20
+#define UART_READ_BUFF_SIZE 1024
+
 namespace GpsApp {
 
   class GpsComponentImpl :
@@ -57,24 +60,25 @@ namespace GpsApp {
           const NATIVE_INT_TYPE instance = 0 /*!< The instance number*/
       );
 
+      //! Preamble
+      //!
+      void preamble(void);
+
       //! Destroy object Gps
       //!
       ~GpsComponentImpl(void);
 
     PRIVATE:
-      //! Setup the UART interface for taking with the GPS module. Note: this
-      //! is currently implemented using standard Unix /dev/tty* devices.
-      //!
-      void setup(void);
       // ----------------------------------------------------------------------
       // Handler implementations for user-defined typed input ports
       // ----------------------------------------------------------------------
 
-      //! Handler implementation for schedIn
+      //! Handler implementation for serialRecv
       //!
-      void schedIn_handler(
+      void serialRecv_handler(
           const NATIVE_INT_TYPE portNum, /*!< The port number*/
-          NATIVE_UINT_TYPE context /*!< The call order*/
+          Fw::Buffer &serBuffer, /*!< Buffer containing data*/
+          Drv::SerialReadStatus &serial_status /*!< Status of read*/
       );
 
     PRIVATE:
@@ -89,12 +93,11 @@ namespace GpsApp {
           const FwOpcodeType opCode, /*!< The opcode*/
           const U32 cmdSeq /*!< The command sequence number*/
       );
-      //!< Is the GPS UART setup
-      bool m_setup;
       //!< Has the device acquired GPS lock?
       bool m_locked;
-      //!< File handle of UART
-      NATIVE_INT_TYPE m_fh;
+      //!< Buffers and buffer storage
+      Fw::Buffer m_recvBuffers[NUM_UART_BUFFERS];
+      BYTE m_uartBuffers[NUM_UART_BUFFERS][UART_READ_BUFF_SIZE];
     };
 
 } // end namespace GpsApp
