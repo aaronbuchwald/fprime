@@ -274,9 +274,9 @@ void constructApp(int port_number, char* hostname, char* device) {
                    Drv::LinuxSerialDriverComponentImpl::PARITY_NONE,
                    true))
     {
-        Fw::Logger::logMsg("[ERROR] Failed to open GPS UART\n");
+        Fw::Logger::logMsg("[ERROR] Failed to open GPS UART: %s\n", reinterpret_cast<POINTER_CAST>(device));
     } else {
-        Fw::Logger::logMsg("[INFO] Opened GPS UART\n");
+        Fw::Logger::logMsg("[INFO] Opened GPS UART: %s\n", reinterpret_cast<POINTER_CAST>(device));
         uart_connected = true;
     }
     // register ping table
