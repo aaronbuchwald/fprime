@@ -1,0 +1,27 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "3b9c1945141b97296335caeebec60b7b5904b30aea0857be14ba61c7332a726b"
+        },
+        "pipfile-spec": 6,
+        "requires": {
+            "python_version": "2.7"
+        },
+        "sources": [
+            {
+                "name": "pypi",
+                "url": "https://pypi.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "fprime": {
+            "path": "./Fw/Python"
+        },
+        "fprime-gds": {
+            "path": "./Gds"
+        }
+    },
+    "develop": {}
+}
